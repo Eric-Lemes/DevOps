@@ -1,0 +1,77 @@
+name: CD - Gerar Release
+
+on:
+  push:
+    branches: [ "main" ]
+  workflow_run:
+    workflows: ["CI - Build e Testes Java"]
+    types:
+      - completed
+
+jobs:
+  release:
+    name: Empacotar e Publicar Release
+    runs-on: ubuntu-latest
+    if: ${{ github.event.workflow_run.conclusion == 'success' || github.event_name == 'push' }}
+
+    steps:
+      - name: Checkout do repositorio
+        uses: actions/checkout@v4
+
+      - name: Configurar JDK 21
+        uses: actions/setup-java@v4
+        with:
+          java-version: '21'
+          distribution: 'temurin'
+
+      - name: Compilar arquivos Java
+        run: |
+          cd src
+          javac *.java
+          echo "✅ Compilacao concluida!"
+
+      - name: Empacotar em JAR
+        run: |
+          cd src
+          echo "Main-Class: Biblioteca" > MANIFEST.MF
+          jar cfm ../biblioteca-virtual.jar MANIFEST.MF *.class
+          echo "✅ JAR gerado com sucesso!"
+
+      - name: Verificar JAR gerado
+        run: |
+          ls -lh biblioteca-virtual.jar
+          echo "Conteudo do JAR:"
+          jar tf biblioteca-virtual.jar
+
+      - name: Gerar numero de versao
+        id: versao
+        run: echo "versao=v1.0.$(date +'%Y%m%d%H%M%S')" >> $GITHUB_OUTPUT
+
+      - name: Criar Release no GitHub
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: ${{ steps.versao.outputs.versao }}
+          name: "Biblioteca Virtual ${{ steps.versao.outputs.versao }}"
+          body: |
+            ## 📚 Sistema de Biblioteca Virtual em Java
+
+            ### O que está incluído
+            - Gerenciamento de livros com **LinkedList**
+            - Fila de espera com **Queue**
+            - Histórico de navegação com **Stack**
+            - Sistema de recomendação com **Grafo (HashMap + Set)**
+
+            ### Como executar
+            ```bash
+            java -jar biblioteca-virtual.jar
+            ```
+
+            ### Livros incluídos
+            - O Senhor dos Anéis, O Hobbit, As Crônicas de Nárnia
+            - Harry Potter, O Nome do Vento, A Roda do Tempo
+            - Duna, Fundação, 1984, Admirável Mundo Novo
+          files: biblioteca-virtual.jar
+          draft: false
+          prerelease: false
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
