@@ -1,0 +1,10 @@
+﻿*.class
+*.jar
+.git
+.gitignore
+.github/
+.idea/
+.vscode/
+*.iml
+.DS_Store
+*.log
