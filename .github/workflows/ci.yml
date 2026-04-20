@@ -1,0 +1,39 @@
+name: CI - Build e Testes Java
+
+on:
+  push:
+    branches: [ "main", "feature/**" ]
+  pull_request:
+    branches: [ "main" ]
+
+jobs:
+  build:
+    name: Compilar e Verificar Codigo
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout do repositorio
+        uses: actions/checkout@v4
+
+      - name: Configurar JDK 21
+        uses: actions/setup-java@v4
+        with:
+          java-version: '21'
+          distribution: 'temurin'
+
+      - name: Compilar arquivos Java
+        run: |
+          cd src
+          javac *.java
+          echo "✅ Compilacao concluida com sucesso!"
+
+      - name: Verificar classes geradas
+        run: |
+          echo "Arquivos .class gerados:"
+          ls src/*.class
+
+      - name: Executar o sistema de biblioteca
+        run: |
+          cd src
+          java Biblioteca
+          echo "✅ Execucao concluida com sucesso!"
